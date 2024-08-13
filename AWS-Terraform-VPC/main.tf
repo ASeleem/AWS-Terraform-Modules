@@ -1,6 +1,6 @@
 locals {
-  len_public_subnets      = length(var.public_subnets)
-  len_private_subnets     = length(var.private_subnets)
+  len_public_subnets  = length(var.public_subnets)
+  len_private_subnets = length(var.private_subnets)
 
   max_subnet_length = max(
     local.len_private_subnets,
@@ -15,7 +15,7 @@ locals {
 # VPC
 ################################################################################
 resource "aws_vpc" "this" {
-  count = var.create_vpc ? 1 : 0
+  count      = var.create_vpc ? 1 : 0
   cidr_block = var.cidr
 
   tags = merge(
@@ -39,14 +39,14 @@ locals {
   create_public_subnets = var.create_vpc && local.len_public_subnets > 0
 }
 resource "aws_subnet" "public" {
-    count                   = local.len_public_subnets > 0 ? local.len_public_subnets : 1
-    vpc_id                  = local.vpc_id
-    cidr_block              = element(concat(var.public_subnets, [""]), count.index)
-    availability_zone       = length(regexall("^[a-z]{2}-", element(var.azs, count.index))) > 0 ? element(var.azs, count.index) : null
-    availability_zone_id    = length(regexall("^[a-z]{2}-", element(var.azs, count.index))) == 0 ? element(var.azs, count.index) : null
+  count                = local.len_public_subnets > 0 ? local.len_public_subnets : 1
+  vpc_id               = local.vpc_id
+  cidr_block           = element(concat(var.public_subnets, [""]), count.index)
+  availability_zone    = length(regexall("^[a-z]{2}-", element(var.azs, count.index))) > 0 ? element(var.azs, count.index) : null
+  availability_zone_id = length(regexall("^[a-z]{2}-", element(var.azs, count.index))) == 0 ? element(var.azs, count.index) : null
 
 
-    tags = merge(
+  tags = merge(
     {
       Name = try(
         var.public_subnet_names[count.index],
@@ -104,8 +104,8 @@ resource "aws_route" "public_internet_gateway" {
 resource "aws_network_acl" "public" {
   count = local.create_private_subnets && var.public_dedicated_network_acl ? 1 : 0
 
-  vpc_id      = local.vpc_id
-  subnet_ids  = aws_subnet.public[*].id
+  vpc_id     = local.vpc_id
+  subnet_ids = aws_subnet.public[*].id
 
   tags = merge(
     { "name" = "${var.name}-${var.public_subnet_suffix}" },
@@ -146,7 +146,7 @@ resource "aws_network_acl_rule" "public_outbound" {
   protocol        = var.public_outbound_acl_rules[count.index]["protocol"]
   cidr_block      = lookup(var.public_outbound_acl_rules[count.index], "cidr_block", null)
   ipv6_cidr_block = lookup(var.public_outbound_acl_rules[count.index], "ipv6_cidr_block", null)
-  
+
 }
 
 ################################################################################
@@ -157,13 +157,13 @@ locals {
 }
 
 resource "aws_subnet" "private" {
-    count                   = local.len_private_subnets > 0 ? local.len_private_subnets : 1
-    vpc_id                  = local.vpc_id
-    cidr_block              = element(concat(var.private_subnets, [""]), count.index) 
-    availability_zone       = length(regexall("^[a-z]{2}-", element(var.azs, count.index))) > 0 ? element(var.azs, count.index) : null
-    availability_zone_id    = length(regexall("^[a-z]{2}-", element(var.azs, count.index))) == 0 ? element(var.azs, count.index) : null
+  count                = local.len_private_subnets > 0 ? local.len_private_subnets : 1
+  vpc_id               = local.vpc_id
+  cidr_block           = element(concat(var.private_subnets, [""]), count.index)
+  availability_zone    = length(regexall("^[a-z]{2}-", element(var.azs, count.index))) > 0 ? element(var.azs, count.index) : null
+  availability_zone_id = length(regexall("^[a-z]{2}-", element(var.azs, count.index))) == 0 ? element(var.azs, count.index) : null
 
-    tags = merge(
+  tags = merge(
     {
       Name = try(
         var.private_subnet_names[count.index],
@@ -212,15 +212,15 @@ locals {
 resource "aws_network_acl" "private" {
   count = local.create_private_network_acl ? local.len_private_subnets : 0
 
-  vpc_id      = local.vpc_id
-  subnet_ids  = aws_subnet.private[*].id
+  vpc_id     = local.vpc_id
+  subnet_ids = aws_subnet.private[*].id
 
   tags = merge(
     { "name" = "${var.name}-${var.private_subnet_suffix}" },
     var.tags,
     var.private_acl_tags,
   )
-  
+
 }
 
 resource "aws_network_acl_rule" "private_inbound" {
